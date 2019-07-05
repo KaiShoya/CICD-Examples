@@ -1,0 +1,50 @@
+# Docker Image
+image: vuejs/ci
+
+# 環境変数 (Web画面から設定も可能)
+variables:
+  FIREBASE_PROJECT_ID: xxxxxxx
+  FIREBASE_TOKEN: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+cache:
+  paths:
+    - node_modules/
+    - dist/
+
+stages:
+  - init
+  - ci
+  - cd
+
+init:
+  stage: init
+  script:
+    - yarn
+  only:
+    - master
+    - merge_requests
+
+test:
+  stage: ci
+  script:
+    - yarn unit
+  only:
+    - master
+    - merge_requests
+
+build:
+  stage: ci
+  script:
+    - yarn build
+  only:
+    - master
+    - merge_requests
+
+deploy:
+  stage: cd
+  script:
+    - yarn global add firebase-tools
+    - firebase use $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
+    - firebase deploy --token $FIREBASE_TOKEN
+  only:
+    - master

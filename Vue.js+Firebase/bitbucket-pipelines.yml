@@ -1,0 +1,46 @@
+# Docker Image
+image: vuejs/ci
+
+# 環境変数 (Web画面から設定も可能)
+.set_environment: &setenv |
+  export FIREBASE_PROJECT_ID=xxxxxxx
+  export FIREBASE_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+definitions:
+  steps:
+    - step: &init
+        name: init
+        caches:
+          - node
+        script:
+          - yarn
+        artifacts:
+          - node_modules/**
+    - parallel: &ci
+        - step:
+            name: Test
+            script:
+              - yarn unit
+        - step:
+            name: Build
+            script:
+              - yarn build
+            artifacts:
+              - dist/**
+
+pipelines:
+  pull-requests:
+    '**':
+      - step: *init
+      - parallel: *ci
+  branches:
+    master:
+      - step: *init
+      - parallel: *ci
+      - step:
+          name: Deploy
+          script:
+            - *setenv
+            - yarn add firebase-tools
+            - node_modules/firebase-tools/lib/bin/firebase.js use $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
+            - node_modules/firebase-tools/lib/bin/firebase.js deploy --token $FIREBASE_TOKEN
