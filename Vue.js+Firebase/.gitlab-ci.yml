@@ -18,6 +18,9 @@ stages:
 
 init:
   stage: init
+  artifacts:
+    paths:
+      - node_modules/
   script:
     - yarn
   only:
@@ -43,8 +46,8 @@ build:
 deploy:
   stage: cd
   script:
-    - yarn global add firebase-tools
-    - firebase use $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
-    - firebase deploy --token $FIREBASE_TOKEN
+    - yarn add firebase-tools
+    - node_modules/firebase-tools/lib/bin/firebase.js use $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
+    - node_modules/firebase-tools/lib/bin/firebase.js deploy --token $FIREBASE_TOKEN
   only:
     - master
