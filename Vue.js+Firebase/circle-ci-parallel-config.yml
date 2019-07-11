@@ -1,0 +1,83 @@
+version: 2.1
+
+executors:
+  my-executor:
+    docker:
+      - image: vuejs/ci
+        environment:
+          FIREBASE_PROJECT_ID: xxxxxxx
+          FIREBASE_TOKEN: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+jobs:
+  init:
+    executor: my-executor
+    steps:
+      - checkout
+      - run: yarn
+      - save_cache:
+          key: modules-{{ arch }}-{{ .Branch }}
+          paths:
+            - node_modules
+      - restore_cache:
+          key: modules-{{ arch }}-{{ .Branch }}
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  test:
+    executor: my-executor
+    steps:
+      - attach_workspace:
+          at: .
+      - run: yarn unit
+
+  build:
+    executor: my-executor
+    steps:
+      - attach_workspace:
+          at: .
+      - run: yarn build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - dist/
+
+  deploy:
+    executor: my-executor
+    steps:
+      - attach_workspace:
+          at: .
+      - deploy:
+          command: |
+            yarn add firebase-tools
+            node_modules/firebase-tools/lib/bin/firebase.js use $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
+            node_modules/firebase-tools/lib/bin/firebase.js deploy --token $FIREBASE_TOKEN
+
+workflows:
+  version: 2
+  cicd:
+    jobs:
+      - init:
+          filters:
+            branches:
+              only: master
+      - test:
+          requires:
+            - init
+          filters:
+            branches:
+              only: master
+      - build:
+          requires:
+            - init
+          filters:
+            branches:
+              only: master
+      - deploy:
+          requires:
+            - test
+            - build
+          filters:
+            branches:
+              only: master

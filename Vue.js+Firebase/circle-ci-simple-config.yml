@@ -1,0 +1,38 @@
+version: 2.1
+
+executors:
+  my-executor:
+    docker:
+      - image: vuejs/ci
+        environment:
+          FIREBASE_PROJECT_ID: xxxxxxx
+          FIREBASE_TOKEN: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+jobs:
+  cicd:
+    executor: my-executor
+    steps:
+      - checkout
+      - run:
+          name: Init
+          command: yarn
+      - run:
+          name: Test
+          command: yarn unit
+      - run:
+          name: Build
+          command: yarn build
+      - deploy:
+          command: |
+            yarn global add firebase-tools
+            firebase use $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
+            firebase deploy --token $FIREBASE_TOKEN
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - cicd:
+          filters:
+            branches:
+              only: master
