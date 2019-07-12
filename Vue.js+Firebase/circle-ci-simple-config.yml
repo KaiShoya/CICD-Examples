@@ -1,18 +1,20 @@
+# CircleCI無料版の最小構成？ファイル
 version: 2.1
 
 executors:
   my-executor:
     docker:
       - image: vuejs/ci
-        environment:
+        environment: # 環境変数 (Web画面から設定も可能)
           FIREBASE_PROJECT_ID: xxxxxxx
           FIREBASE_TOKEN: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
+# 定義
 jobs:
-  cicd:
-    executor: my-executor
+  cicd: # job名
+    executor: my-executor # Docker image、環境変数読み込み
     steps:
-      - checkout
+      - checkout # checkout処理 cdまでしてくれる
       - run:
           name: Init
           command: yarn
@@ -23,16 +25,17 @@ jobs:
           name: Build
           command: yarn build
       - deploy:
-          command: |
+          command: | # コマンドを複数書くときはこんな感じ
             yarn global add firebase-tools
             firebase use $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
             firebase deploy --token $FIREBASE_TOKEN
 
+# 実際に実行されるタスク
 workflows:
   version: 2
-  build_and_deploy:
+  build_and_deploy: # タスク名
     jobs:
-      - cicd:
-          filters:
+      - cicd: # 定義で作成したjob名
+          filters: # 実行するブランチを指定
             branches:
               only: master

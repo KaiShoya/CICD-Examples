@@ -1,26 +1,28 @@
+# GitLab、Bitbucketの動作に寄せたファイル
 version: 2.1
 
 executors:
   my-executor:
     docker:
       - image: vuejs/ci
-        environment:
+        environment: # 環境変数 (Web画面から設定も可能)
           FIREBASE_PROJECT_ID: xxxxxxx
           FIREBASE_TOKEN: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
+# 定義
 jobs:
-  init:
-    executor: my-executor
+  init: # job名
+    executor: my-executor # Docker image、環境変数読み込み
     steps:
-      - checkout
-      - run: yarn
-      - save_cache:
+      - checkout # checkout処理 cdまでしてくれる
+      - run: yarn # 実際の処理
+      - save_cache: # 別のアーティファクトから呼び出せるようキャッシュを保存する
           key: modules-{{ arch }}-{{ .Branch }}
-          paths:
+          paths: # 保存するディレクトリのパス
             - node_modules
-      - restore_cache:
+      - restore_cache: # 保存されているキャッシュを呼び出し
           key: modules-{{ arch }}-{{ .Branch }}
-      - persist_to_workspace:
+      - persist_to_workspace: # アーティファクト内で共有するディレクトリを指定
           root: .
           paths:
             - .
@@ -28,7 +30,7 @@ jobs:
   test:
     executor: my-executor
     steps:
-      - attach_workspace:
+      - attach_workspace: # persist_to_workspaceで指定されたディレクトリをアタッチ
           at: .
       - run: yarn unit
 
@@ -38,7 +40,7 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn build
-      - persist_to_workspace:
+      - persist_to_workspace: # このjob内での変更は共有されないため、dist/を共有するよう再設定
           root: .
           paths:
             - dist/
@@ -49,27 +51,28 @@ jobs:
       - attach_workspace:
           at: .
       - deploy:
-          command: |
+          command: | # コマンドを複数書くときはこんな感じ
             yarn add firebase-tools
             node_modules/firebase-tools/lib/bin/firebase.js use $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
             node_modules/firebase-tools/lib/bin/firebase.js deploy --token $FIREBASE_TOKEN
 
+# 実際に実行されるタスク
 workflows:
   version: 2
-  cicd:
+  cicd: # タスク名
     jobs:
-      - init:
-          filters:
+      - init: # 定義で作成したjob名
+          filters: # 実行するブランチを指定
             branches:
               only: master
       - test:
-          requires:
+          requires: # 処理待ちするjobを指定
             - init
           filters:
             branches:
               only: master
       - build:
-          requires:
+          requires: # testと同じように書くことで並列処理になる
             - init
           filters:
             branches:

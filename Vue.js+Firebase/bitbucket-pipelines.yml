@@ -6,17 +6,18 @@ image: vuejs/ci
   export FIREBASE_PROJECT_ID=xxxxxxx
   export FIREBASE_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
+# 定義
 definitions:
   steps:
-    - step: &init
+    - step: &init # *initと書くことでこの処理を呼び出せる
         name: init
-        caches:
+        caches: # 前回生成されたアーティファクトから引き継ぐディレクトリを指定
           - node
-        script:
+        script: # ここにメインの処理を書く
           - yarn
-        artifacts:
+        artifacts: # アーティファクト内で共有するディレクトリの設定
           - node_modules/**
-    - parallel: &ci
+    - parallel: &ci # parallelに複数stepを書くことで並列処理になる
         - step:
             name: Test
             script:
@@ -25,22 +26,22 @@ definitions:
             name: Build
             script:
               - yarn build
-            artifacts:
+            artifacts: # アーティファクト内で共有するディレクトリの設定
               - dist/**
 
 pipelines:
-  pull-requests:
-    '**':
+  pull-requests: # プルリク時の処理
+    '**': # 全てのプルリク feature/*: などブランチを指定できる
       - step: *init
       - parallel: *ci
   branches:
-    master:
+    master: # masterにコミットされた時の処理
       - step: *init
       - parallel: *ci
       - step:
           name: Deploy
           script:
-            - *setenv
+            - *setenv # 環境設定読み込み
             - yarn add firebase-tools
             - node_modules/firebase-tools/lib/bin/firebase.js use $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
             - node_modules/firebase-tools/lib/bin/firebase.js deploy --token $FIREBASE_TOKEN

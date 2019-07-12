@@ -6,24 +6,26 @@ variables:
   FIREBASE_PROJECT_ID: xxxxxxx
   FIREBASE_TOKEN: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
+# アーティファクト内で共有するディレクトリの設定
 cache:
   paths:
     - node_modules/
     - dist/
 
+# jobの処理順を指定
 stages:
   - init
   - ci
   - cd
 
-init:
-  stage: init
-  artifacts:
+init: # job名
+  stage: init # stagesで使用する名前 他のjobに同じ名前をつけることで並列処理になる
+  artifacts: # 前回生成されたアーティファクトから引き継ぐディレクトリを指定
     paths:
       - node_modules/
-  script:
+  script: # ここにメインの処理を書く
     - yarn
-  only:
+  only: # 実行するタイミングを指定
     - master
     - merge_requests
 
